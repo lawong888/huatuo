@@ -122,11 +122,19 @@ def speech_synthesis(chat_transcript):
     
     # Check if audio response created     
     if os.path.exists("outputaudio.mp3"):
-        print("Audio synthesized successfully")
+        log("Audio synthesized successfully")
     else:
-        print("Audio not created yet. Waiting...")
+        log("Audio not created yet. Waiting...")
         time.sleep(30)
-    return "outputaudio.mp3"    
+    return "outputaudio.mp3"  
+
+def log(log: str):
+    """
+    Print and write to status.txt
+    """
+    #print(log)
+    with open("status.txt", "w") as f:
+        f.write(log)
 
 with gr.Blocks(css=css_style) as demo:
     
