@@ -125,6 +125,9 @@ def speech_synthesis(chat_transcript):
     return "outputaudio.mp3"  
 
 
+os.environ['SPEECH_KEY'] = '6c638ef5e42242518c67c22fc62b08b4'
+os.environ['SPEECH_REGION'] = 'southeastasia'
+os.environ['SSL_CERT_DIR']='/etc/ssl/certs'
 
 # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
 speech_config = speechsdk.SpeechConfig(subscription=os.environ.get('SPEECH_KEY'), region=os.environ.get('SPEECH_REGION'))
