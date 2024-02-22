@@ -373,4 +373,4 @@ with gr.Blocks(css=css_style) as demo:
             clear_btn.click(lambda: None, None, inputs, queue=False)
 
 
-demo.launch(share=True, debug=False)  # auth="humania","cantoai"
+demo.launch(share=False, debug=False)  # auth="humania","cantoai"
