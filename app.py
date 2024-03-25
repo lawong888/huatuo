@@ -9,10 +9,11 @@ import datetime
 import time
 import azure.cognitiveservices.speech as speechsdk
 
+""" #Groq
 client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
 )
-
+"""
 # footer
 css_style = """
     footer {
@@ -89,7 +90,7 @@ def chat(transcript_text):
         messages[0]["content"]+= knowledge_bank
         messages.append({"role": "user", "content": transcript_text})
 
-    """    
+       
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-16k",
         messages=messages,
@@ -98,6 +99,7 @@ def chat(transcript_text):
         frequency_penalty=0,
         presence_penalty=0     
     )
+
     """
     response = client.chat.completions.create(
         messages=messages,
@@ -107,13 +109,13 @@ def chat(transcript_text):
         frequency_penalty=0,
         presence_penalty=0 
     )
-    
+    #Groq
+    chat_transcript = response.choices[0].message.content
+    prompt_token = response.usage.prompt_tokens
     """
     chat_transcript = response["choices"][0]["message"]["content"]
     prompt_token = response["usage"]["prompt_tokens"]
-    """ 
-    chat_transcript = response.choices[0].message.content
-    prompt_token = response.usage.prompt_tokens
+
     #print("prompt for this conversation is: ", messages)
     #print(response)
     
