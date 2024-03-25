@@ -3,11 +3,15 @@ from glob import glob
 import gradio as gr
 import redis
 import openai
+from groq import Groq
 import tiktoken
 import datetime
 import time
 import azure.cognitiveservices.speech as speechsdk
 
+client = Groq(
+    api_key=os.environ.get("GROQ_API_KEY"),
+)
 
 # footer
 css_style = """
@@ -84,7 +88,8 @@ def chat(transcript_text):
     else: 
         messages[0]["content"]+= knowledge_bank
         messages.append({"role": "user", "content": transcript_text})
-        
+
+    """    
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-16k",
         messages=messages,
@@ -93,9 +98,22 @@ def chat(transcript_text):
         frequency_penalty=0,
         presence_penalty=0     
     )
-
+    """
+    response = client.chat.completions.create(
+        messages=messages,
+        model="mixtral-8x7b-32768",
+        temperature=.1,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0 
+    )
+    
+    """
     chat_transcript = response["choices"][0]["message"]["content"]
     prompt_token = response["usage"]["prompt_tokens"]
+    """ 
+    chat_transcript = response.choices[0].message.content
+    prompt_token = response.usage.prompt_tokens
     #print("prompt for this conversation is: ", messages)
     #print(response)
     
