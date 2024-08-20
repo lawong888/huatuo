@@ -2,13 +2,14 @@ import os
 from glob import glob
 import gradio as gr
 import redis
-import openai
+from openai import OpenAI
 from groq import Groq
 import tiktoken
 import datetime
 import time
 import azure.cognitiveservices.speech as speechsdk
 
+client = OpenAI()
 """ #Groq
 client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
@@ -62,8 +63,12 @@ def transcribe(audio):
     else: 
         #print(audio)
         audio_file = open(audio, "rb")
-        transcript = openai.Audio.transcribe("whisper-1", audio_file, fp16=False, prompt="培力, 農本方, PuraPharm")
-        transcript_text = transcript["text"]
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1", 
+            file=audio_file, 
+            prompt="培力, 農本方, PuraPharm"
+            )
+        transcript_text = transcript.text
         #print(transcript)
     return transcript_text
 
@@ -91,8 +96,8 @@ def chat(transcript_text):
         messages.append({"role": "user", "content": transcript_text})
 
        
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-16k",
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=messages,
         temperature=.1,
         top_p=1,
@@ -113,8 +118,8 @@ def chat(transcript_text):
     chat_transcript = response.choices[0].message.content
     prompt_token = response.usage.prompt_tokens
     """
-    chat_transcript = response["choices"][0]["message"]["content"]
-    prompt_token = response["usage"]["prompt_tokens"]
+    chat_transcript = response.choices[0].message.content
+    prompt_token = response.usage.prompt_tokens
 
     #print("prompt for this conversation is: ", messages)
     #print(response)
@@ -193,10 +198,10 @@ def log(log: str):
         f.write(log)
 
 db = redis.Redis(
-          host='redis-11731.c1.ap-southeast-1-1.ec2.cloud.redislabs.com',
-          port=11731,
+          host='redis-17381.c292.ap-southeast-1-1.ec2.redns.redis-cloud.com',
+          port=17381,
           username='default',
-          password='2bDDtX5SOWQ3W2lZVhI6IQKsAWtacETL',
+          password='whJtocj3jEaK5PWCkVyGIEEDp10MGQZf',
           decode_responses=True
           )
 
