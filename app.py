@@ -8,6 +8,16 @@ import tiktoken
 import datetime
 import time
 import azure.cognitiveservices.speech as speechsdk
+import re
+
+def clean_text_for_speech(text):
+    # Remove asterisks used for bold formatting
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    # Remove single asterisks used for italic formatting
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    # Remove any other markdown-style formatting if needed
+    # For example, remove underscores for italic: text = re.sub(r'_(.*?)_', r'\1', text)
+    return text
 
 client = OpenAI()
 """ #Groq
@@ -119,18 +129,19 @@ def chat(transcript_text):
     prompt_token = response.usage.prompt_tokens
     """
     chat_transcript = response.choices[0].message.content
+    cleaned_transcript = clean_text_for_speech(chat_transcript)
     prompt_token = response.usage.prompt_tokens
 
     #print("prompt for this conversation is: ", messages)
     #print(response)
     
     # push data to redis
-    db_push(transcript_text, chat_transcript, entry_datetime, prompt_token)
+    db_push(transcript_text, cleaned_transcript, entry_datetime, prompt_token)
     
     # Clear Knowledge bank from messages/prompt
     messages[0]["content"] = character
 
-    return chat_transcript
+    return cleaned_transcript
   
 def speech_synthesis(chat_transcript):
     # Clear last speech
@@ -138,8 +149,11 @@ def speech_synthesis(chat_transcript):
         with open("outputaudio.mp3","r+") as file:
             file.truncate(0)
     
+    # Clean the text before speech synthesis
+    cleaned_transcript = clean_text_for_speech(chat_transcript)
+    
     # speech synthesis
-    tts(chat_transcript)
+    tts(cleaned_transcript)
     
     # Check if audio response created     
     if os.path.exists("outputaudio.mp3"):
@@ -147,7 +161,7 @@ def speech_synthesis(chat_transcript):
     else:
         log("Audio not created yet. Waiting...")
         time.sleep(30)
-    return "outputaudio.mp3"  
+    return "outputaudio.mp3"
 
 
 os.environ['SPEECH_KEY'] = '6c638ef5e42242518c67c22fc62b08b4'
