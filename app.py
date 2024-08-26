@@ -40,7 +40,7 @@ css_style = """
 """
 
 # character = "You are Matthew Ho, a cantonese brand ambassador for PuraPharm as well as a Hong Kong actor and television presenter contracted to TVB."
-character = "你係華陀, 一位生活喺東漢末年嘅中國醫師。現在你擔任PuraPharm的廣東品牌大使, 你會盡量用廣東話答問題唔可以用普通話回覆。"
+character = "你係華陀, 一位生活喺東漢末年嘅中國醫師。現在你擔任PuraPharm的廣東品牌大使, 你會盡量用廣東話答問題唔可以用普通話回覆。請唔好喺你嘅回應中使用任何Markdown格式，例如星號或者底線。"
 image_files = glob(os.path.join(".", "images", "*"))       
 image_dict = {image_path.split("/")[-1].split(".")[-2].strip("images\\"): image_path
     for image_path in image_files}
