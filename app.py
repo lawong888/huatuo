@@ -380,14 +380,14 @@ with gr.Blocks(css=css_style) as demo:
 
     with gr.Row():
         with gr.Column(scale=2, min_width=200):
-            video = gr.Video("https://www.purapharm.com/wp-content/uploads/2020/07/Nongs-video-Eng.mp4", autoplay=True)
+            video = gr.Video("https://www.purapharm.com/wp-content/uploads/2020/07/Nongs-video-Eng.mp4", autoplay=False)
             gr.TextArea(label="From Farm to Bottle",
                         value="農本方自設種子種苗繁育國家工程中心、生產及研究基地，以及連鎖中醫診所，將中藥的種植、生產製造及服用方法全面現代化，提供安全、可靠及有效的中藥產品及醫療服務。\n\n From our Chinese herbs plantation, to our state-of-the-art production facility, to Nong’s® Clinics, Nong’s® takes you to a journey to see how we modernize the way in which traditional Chinese medicine is manufactured, prepared and consumed, offering safe, reliable, and effective products and treatment for all.")
             
             gallery = gr.Gallery(image_files, preview=True, object_fit="scale-down")
             
         with gr.Column(scale=1, min_width=200):
-            img2 = gr.Video("huatuo.mp4", autoplay=True)
+            img2 = gr.Video("huatuo.mp4", autoplay=True, loop=True)
             inputs=gr.Audio(source="microphone", type="filepath", interactive=True)
            
             with gr.Row(visible=False) as output_col:
