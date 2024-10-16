@@ -8,7 +8,13 @@ import tiktoken
 import datetime
 import time
 import azure.cognitiveservices.speech as speechsdk
+import asyncio
+import sys
 import re
+
+# Set event loop policy for Windows
+if sys.platform.startswith('win'):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 def remove_markdown(text):
     text = re.sub(r'\*+', '', text)  # Remove bold/italic markers
