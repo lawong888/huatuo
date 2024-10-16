@@ -358,5 +358,4 @@ if __name__ == "__main__":
     app.launch(share=False, debug=False)
 else:
     # For ASGI servers like Uvicorn
-    import gradio as gr
-    app = gr.mount_gradio_app(app, "/", lambda: app)
+    app = app.launch(show_api=False)
