@@ -10,14 +10,12 @@ import time
 import azure.cognitiveservices.speech as speechsdk
 import re
 
-def clean_text_for_speech(text):
-    # Remove asterisks used for bold formatting
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    # Remove single asterisks used for italic formatting
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    # Remove any other markdown-style formatting if needed
-    # For example, remove underscores for italic: text = re.sub(r'_(.*?)_', r'\1', text)
-    return text
+def remove_markdown(text):
+    text = re.sub(r'\*+', '', text)  # Remove bold/italic markers
+    text = re.sub(r'`', '', text)  # Remove backticks
+    text = re.sub(r'#+\s', '', text)  # Remove hashtags (headers)
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)  # Remove URL formatting
+    return text.strip()
 
 client = OpenAI()
 """ #Groq
@@ -110,26 +108,13 @@ def chat(transcript_text):
         model="gpt-4o-mini",
         messages=messages,
         temperature=.1,
-        top_p=1,
+        # top_p=1,
         frequency_penalty=0,
         presence_penalty=0     
     )
 
-    """
-    response = client.chat.completions.create(
-        messages=messages,
-        model="mixtral-8x7b-32768",
-        temperature=.1,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0 
-    )
-    #Groq
     chat_transcript = response.choices[0].message.content
-    prompt_token = response.usage.prompt_tokens
-    """
-    chat_transcript = response.choices[0].message.content
-    cleaned_transcript = clean_text_for_speech(chat_transcript)
+    cleaned_transcript = remove_markdown(chat_transcript)
     prompt_token = response.usage.prompt_tokens
 
     #print("prompt for this conversation is: ", messages)
@@ -144,24 +129,32 @@ def chat(transcript_text):
     return cleaned_transcript
   
 def speech_synthesis(chat_transcript):
-    # Clear last speech
-    if os.path.exists("outputaudio.mp3"):
-        with open("outputaudio.mp3","r+") as file:
-            file.truncate(0)
-    
-    # Clean the text before speech synthesis
-    cleaned_transcript = clean_text_for_speech(chat_transcript)
-    
-    # speech synthesis
-    tts(cleaned_transcript)
-    
-    # Check if audio response created     
-    if os.path.exists("outputaudio.mp3"):
-        log("Audio synthesized successfully")
-    else:
-        log("Audio not created yet. Waiting...")
-        time.sleep(30)
-    return "outputaudio.mp3"
+    try:
+        # Clear last speech
+        if os.path.exists("outputaudio.mp3"):
+            with open("outputaudio.mp3", "r+") as file:
+                file.truncate(0)
+        
+        # Remove markdown formatting
+        clean_transcript = remove_markdown(chat_transcript)
+        
+        # Speech synthesis
+        tts(clean_transcript)
+        
+        # Check if audio response created     
+        if os.path.exists("outputaudio.mp3"):
+            log("Audio synthesized successfully")
+            return "outputaudio.mp3"
+        else:
+            log("Audio not created yet. Waiting...")
+            time.sleep(30)
+            if os.path.exists("outputaudio.mp3"):
+                return "outputaudio.mp3"
+            else:
+                raise Exception("Audio file not created after waiting")
+    except Exception as e:
+        log(f"Error in speech synthesis: {e}")
+        return None
 
 
 os.environ['SPEECH_KEY'] = '6c638ef5e42242518c67c22fc62b08b4'
@@ -212,12 +205,12 @@ def log(log: str):
         f.write(log)
 
 db = redis.Redis(
-          host='redis-17381.c292.ap-southeast-1-1.ec2.redns.redis-cloud.com',
-          port=17381,
-          username='default',
-          password='whJtocj3jEaK5PWCkVyGIEEDp10MGQZf',
-          decode_responses=True
-          )
+    host=os.environ.get('REDIS_HOST'),
+    port=os.environ.get('REDIS_PORT'),
+    username=os.environ.get('REDIS_USERNAME'),
+    password=os.environ.get('REDIS_PASSWORD'),
+    decode_responses=True
+)
 
 # length of user list in db
 user_db = db.llen('user_message')
@@ -234,139 +227,55 @@ product_files = glob(os.path.join(".", "products", "*"))
 product_dict = {product_path.split("/")[-1].split(".")[-2].strip("products\\"): product_path
     for product_path in product_files}
 
-def knowledge(transcript_text):
+def get_product_info(keywords):
+    """
+    Retrieve product information based on keywords.
+    
+    Args:
+    keywords (list): List of keywords to search for in product files
+    
+    Returns:
+    list: List of product information strings
+    """
+    file_names = [file_name for file_name in product_files if any(keyword in file_name for keyword in keywords)]
     knowledge = []
-
-    if "脫髮" in transcript_text or "白髮" in transcript_text or "掉頭髮" in transcript_text or "洗髮" in transcript_text:
-        file_names= [file_name for file_name in product_files if "烏髮濃專用健髮洗髮露" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "失眠" in transcript_text or "瞓唔着" in transcript_text:
-        file_names= [file_name for file_name in product_files if "失眠" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "感冒"in transcript_text:
-        file_names= [file_name for file_name in product_files if "感冒" in file_name]
-
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "咳" in transcript_text or "嗽" in transcript_text:
-        file_names= [file_name for file_name in product_files if "咳" in file_name or "嗽"in file_name]
-
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "心"in transcript_text:
-        file_names= [file_name for file_name in product_files if "心" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "病後"in transcript_text or"調理" in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "雲芝"in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "免疫力"in transcript_text or"抵抗力" in transcript_text or "身體虛弱" in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "靈芝" in file_name and "雲芝"in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "全面保健"in transcript_text or"延緩老化" in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "金靈芝" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "改善呼吸"in transcript_text or"補肺益腎" in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "蟲草菌絲" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "鼻敏感"in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "鼻敏感" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "肝" in transcript_text:
-
-        file_names= [file_name for file_name in product_files if "肝" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    elif "濃縮中藥" in transcript_text:
-        file_names= [file_name for file_name in product_files if "濃縮中藥" in file_name]
-        print(file_names)
-
-        for file_name in file_names:
-            with open(file_name, "r", encoding="utf-8") as file:
-                content = file.read()
-                new_knowledge = "推薦產品: " + content
-                knowledge.append(new_knowledge)
-
-    knowledge = ', '.join(knowledge)
+    for file_name in file_names:
+        with open(file_name, 'r', encoding='utf-8') as file:
+            content = file.read()
+            knowledge.append(f'推薦產品: {content}')
     return knowledge
+
+def knowledge(transcript_text):
+    """
+    Generate knowledge based on the transcript text.
+    
+    Args:
+    transcript_text (str): The transcribed user input
+    
+    Returns:
+    str: Comma-separated string of relevant product information
+    """
+    keyword_map = {
+        ('脫髮', '白髮', '掉頭髮', '洗髮'): ['烏髮濃專用健髮洗髮露'],
+        ('失眠', '瞓唔着'): ['失眠'],
+        ('感冒',): ['感冒'],
+        ('咳', '嗽'): ['咳', '嗽'],
+        ('心',): ['心'],
+        ('病後', '調理'): ['雲芝'],
+        ('免疫力', '抵抗力', '身體虛弱'): ['靈芝', '雲芝'],
+        ('全面保健', '延緩老化'): ['金靈芝'],
+        ('改善呼吸', '補肺益腎'): ['蟲草菌絲'],
+        ('鼻敏感',): ['鼻敏感'],
+        ('肝',): ['肝'],
+        ('濃縮中藥',): ['濃縮中藥'],
+    }
+
+    knowledge = []
+    for keywords, product_keywords in keyword_map.items():
+        if any(keyword in transcript_text for keyword in keywords):
+            knowledge.extend(get_product_info(product_keywords))
+
+    return ', '.join(knowledge)
 
 
 # main Gradio Body
