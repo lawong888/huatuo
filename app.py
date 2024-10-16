@@ -308,7 +308,7 @@ def knowledge(transcript_text):
 
 
 # main Gradio Body
-with gr.Blocks(css=css_style) as demo:
+with gr.Blocks(css=css_style) as app:
 
     gr.Markdown(
     """
@@ -351,8 +351,12 @@ with gr.Blocks(css=css_style) as demo:
             submit_btn.click(submit_2, outputs=[output_1, output_2, output_col]).then(fn=transcribe, inputs=inputs, outputs=output_1).then(fn=chat, inputs=output_1, outputs=output_2).success(fn=speech_synthesis, inputs=output_2, outputs=gr.Audio("outputaudio.mp3", autoplay=True))
             clear_btn.click(lambda: None, None, inputs, queue=False)
 
-# demo.launch(share=False, debug=False, server_name="0.0.0.0", server_port=7860)  # auth="humania","cantoai"
+# app.launch(share=False, debug=False, server_name="0.0.0.0", server_port=7860)  # auth="humania","cantoai"
 
 # Run the Gradio app directly
 if __name__ == "__main__":
-    demo.launch(share=False, debug=False)
+    app.launch(share=False, debug=False)
+else:
+    # For ASGI servers like Uvicorn
+    import gradio as gr
+    app = gr.mount_gradio_app(app, "/", lambda: app)
