@@ -327,7 +327,7 @@ with gr.Blocks(css=css_style) as demo:
         with gr.Column(scale=1, min_width=200):
             # img2 = gr.Video("huatuo.mp4", autoplay=True)
             # inputs=gr.Audio(source="microphone", type="filepath", interactive=True)
-            img2 = gr.Video("huatuo.mp4", autoplay=True, loop=True)
+            img2 = gr.Video("huatuo.mp4", autoplay=True)
             inputs=gr.Audio(type="filepath", sources=["microphone"], interactive=True)
            
             with gr.Row(visible=False) as output_col:
