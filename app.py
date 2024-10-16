@@ -328,7 +328,7 @@ with gr.Blocks(css=css_style) as demo:
             # img2 = gr.Video("huatuo.mp4", autoplay=True)
             # inputs=gr.Audio(source="microphone", type="filepath", interactive=True)
             img2 = gr.Video("huatuo.mp4", autoplay=True)
-            inputs=gr.Audio(type="filepath", sources=["microphone"], interactive=True)
+            inputs=gr.Audio(type="filepath", source="microphone", interactive=True)
            
             with gr.Row(visible=False) as output_col:
                 submit_btn = gr.Button("Submit")
