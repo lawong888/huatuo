@@ -1,7 +1,7 @@
 datetime
 azure-cognitiveservices-speech==1.35.0
-gradio==3.43.2
+gradio==4.39.0
 openai==1.0.0
 redis==4.6.0
 tiktoken==0.5.2
-groq==0.4.2
+uvicorn

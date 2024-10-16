@@ -3,7 +3,7 @@ from glob import glob
 import gradio as gr
 import redis
 from openai import OpenAI
-from groq import Groq
+# from groq import Groq
 import tiktoken
 import datetime
 import time
@@ -11,6 +11,13 @@ import azure.cognitiveservices.speech as speechsdk
 import asyncio
 import sys
 import re
+
+# used only for local testing
+try:
+    import config
+except ImportError:
+    # If config.py doesn't exist, we'll just ignore it
+    pass
 
 # Set event loop policy for Windows
 if sys.platform.startswith('win'):
@@ -210,16 +217,32 @@ def log(log: str):
     with open("status.txt", "w") as f:
         f.write(log)
 
-db = redis.Redis(
-    host=os.environ.get('REDIS_HOST'),
-    port=os.environ.get('REDIS_PORT'),
-    username=os.environ.get('REDIS_USERNAME'),
-    password=os.environ.get('REDIS_PASSWORD'),
-    decode_responses=True
-)
-
-# length of user list in db
-user_db = db.llen('user_message')
+# Initialize Redis connection
+try:
+    db = redis.Redis(
+        host=os.environ.get('REDIS_HOST'),
+        port=int(os.environ.get('REDIS_PORT', 6379)),
+        username=os.environ.get('REDIS_USERNAME'),
+        password=os.environ.get('REDIS_PASSWORD'),
+        decode_responses=True
+    )
+    # Test the connection
+    db.ping()
+    print("Successfully connected to Redis")
+    user_db = db.llen('user_message')
+except redis.exceptions.ConnectionError as e:
+    print(f"Failed to connect to Redis: {e}")
+    print("Redis connection details:")
+    print(f"Host: {os.environ.get('REDIS_HOST')}")
+    print(f"Port: {os.environ.get('REDIS_PORT')}")
+    print(f"Username: {os.environ.get('REDIS_USERNAME')}")
+    print("Password: [REDACTED]")
+    db = None
+    user_db = 0
+except Exception as e:
+    print(f"An unexpected error occurred while connecting to Redis: {e}")
+    db = None
+    user_db = 0
 
 # push data to redis
 def db_push(transcript_text, chat_transcript, entry_datetime, token):
@@ -302,8 +325,10 @@ with gr.Blocks(css=css_style) as demo:
             gallery = gr.Gallery(image_files, preview=True, object_fit="scale-down")
             
         with gr.Column(scale=1, min_width=200):
+            # img2 = gr.Video("huatuo.mp4", autoplay=True)
+            # inputs=gr.Audio(source="microphone", type="filepath", interactive=True)
             img2 = gr.Video("huatuo.mp4", autoplay=True, loop=True)
-            inputs=gr.Audio(source="microphone", type="filepath", interactive=True)
+            inputs=gr.Audio(type="filepath", sources=["microphone"], interactive=True)
            
             with gr.Row(visible=False) as output_col:
                 submit_btn = gr.Button("Submit")
@@ -326,5 +351,8 @@ with gr.Blocks(css=css_style) as demo:
             submit_btn.click(submit_2, outputs=[output_1, output_2, output_col]).then(fn=transcribe, inputs=inputs, outputs=output_1).then(fn=chat, inputs=output_1, outputs=output_2).success(fn=speech_synthesis, inputs=output_2, outputs=gr.Audio("outputaudio.mp3", autoplay=True))
             clear_btn.click(lambda: None, None, inputs, queue=False)
 
+# demo.launch(share=False, debug=False, server_name="0.0.0.0", server_port=7860)  # auth="humania","cantoai"
 
-demo.launch(share=False, debug=False)  # auth="humania","cantoai"
+# Run the Gradio app directly
+if __name__ == "__main__":
+    demo.launch(share=False, debug=False)
