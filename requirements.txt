@@ -4,7 +4,8 @@ azure-cognitiveservices-speech==1.41.1
 gradio==3.43.2
 # openai==1.0.0
 # openai==1.51.2
-openai==0.28.1
+openai==1.14.3
+httpx
 # redis==4.6.0
 redis==5.1.1
 tiktoken==0.5.2
