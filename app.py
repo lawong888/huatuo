@@ -118,7 +118,7 @@ def chat(transcript_text):
 
        
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=messages,
         temperature=.1,
         # top_p=1,
