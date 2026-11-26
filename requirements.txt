@@ -2,6 +2,10 @@ datetime
 # azure-cognitiveservices-speech==1.35.0
 azure-cognitiveservices-speech==1.41.1
 gradio==3.43.2
+# gradio 3.43 breaks on starlette>=1.0 (TemplateResponse signature) -> pin its 2023-era web stack
+fastapi==0.103.2
+starlette==0.27.0
+pydantic==2.5.3
 # openai==1.0.0
 # openai==1.51.2
 # openai==1.14.3

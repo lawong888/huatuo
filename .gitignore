@@ -1,2 +1,5 @@
 temp/
 .env
+.aider*
+render.txt
+Redis.md
